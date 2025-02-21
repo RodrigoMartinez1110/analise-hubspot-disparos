@@ -38,6 +38,7 @@ def carregar_dados(hubspot_file, disparos_file):
         'origem', 'campanha', 'proprietario', 'produto', 'equipe', 'etapa',
         'motivo_perda', 'data_pago', 'comissao_total_projetada', 'valor_pago'
     ]
+    hubspot_data = hubspot_data.loc[hubspot_data['equipe'].str.contains("Sales", case=False)]
     hubspot_data['data_criado'] = pd.to_datetime(hubspot_data['data_criado']).dt.date
     hubspot_data['convenio'] = hubspot_data['campanha'].str.split("_").str[0].str.upper()
     hubspot_data = hubspot_data.loc[~hubspot_data['origem'].isin(['HYPERFLOW', 'Tallos', 'DISPARO', 'Duplicação Negócio App'])]
