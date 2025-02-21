@@ -154,7 +154,7 @@ def grafico_etapas_origem(hubspot_data):
 
 # Grafico 4 - Mostra quantos leads foram gerados pra cada convênio por cada origem
 def grafico_cpf_por_convenio(hubspot_data):
-    grouped_data = hubspot_data.groupby(['convenio', 'origem'])['cpf'].size().reset_index(name='Quantidade')
+    grouped_data = hubspot_data.groupby(['convenio', 'origem'])['cpf'].size().reset_index(name='Quantidade').sort_values(by='Quantidade', ascendig=False)
     fig = px.bar(
         grouped_data, y='convenio', x='Quantidade', color='origem',
         orientation='h', title='Quantidade de Leads por Convênio e Origem',
