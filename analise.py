@@ -1,7 +1,14 @@
 import pandas as pd
+import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
-import streamlit as st
+from graficos import (
+    grafico_quantidade_registros_por_origem,
+    grafico_tabela_disparos_leads,
+    grafico_tabela,
+    grafico_etapas_origem,
+    grafico_cpf_por_convenio
+)
 
 # Função para normalizar os produtos
 def normalizar_produto(nome_produto):
@@ -20,78 +27,78 @@ def normalizar_produto(nome_produto):
                 return produto
     return "OUTROS"
 
-# Função principal do Streamlit
+# Função para carregar e processar dados
+def carregar_dados(hubspot_file, disparos_file):
+    hubspot_data = pd.read_csv(hubspot_file)
+    disparos_data = pd.read_csv(disparos_file)
+
+    # Tratamento HubSpot
+    hubspot_data.columns = [
+        'id', 'cliente', 'data_criado', 'cpf', 'telefone', 'convenio_completo',
+        'origem', 'campanha', 'proprietario', 'produto', 'equipe', 'etapa',
+        'motivo_perda', 'data_pago', 'comissao_total_projetada', 'valor_pago'
+    ]
+    hubspot_data['data_criado'] = pd.to_datetime(hubspot_data['data_criado']).dt.date
+    hubspot_data['convenio'] = hubspot_data['campanha'].str.split("_").str[0].str.upper()
+    hubspot_data = hubspot_data.loc[~hubspot_data['origem'].isin(['HYPERFLOW', 'Tallos', 'DISPARO', 'Duplicação Negócio App'])]
+    hubspot_data['origem'] = hubspot_data['origem'].replace("Whatsapp Grow", "RCS")
+    hubspot_data['produto2'] = hubspot_data['produto'].apply(normalizar_produto)
+    hubspot_data['data_criado'] = pd.to_datetime(hubspot_data['data_criado'])
+
+    # Tratamento Disparos
+    disparos_data['Data'] = pd.to_datetime(disparos_data['Data'], dayfirst=True).dt.date
+    disparos_data['Convênio'] = disparos_data['Convênio'].str.replace(" ", "")
+    disparos_data.columns = ['data_criado', 'convenio', 'produto2', 'quantidade', 'origem', 'gasto', 'mql', 'pagos', 'receita']
+    disparos_data['data_criado'] = pd.to_datetime(disparos_data['data_criado'])
+
+    return hubspot_data, disparos_data
+
+# Função para exibir gráficos
+def exibir_graficos(hubspot_data, disparos_data):
+    st.plotly_chart(grafico_quantidade_registros_por_origem(hubspot_data))
+    st.write("---")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.plotly_chart(grafico_tabela_disparos_leads(hubspot_data, disparos_data))
+    with col2:
+        st.plotly_chart(grafico_tabela(hubspot_data, disparos_data))
+    st.write("---")
+
+    st.plotly_chart(grafico_etapas_origem(hubspot_data))
+    st.write("---")
+
+    st.plotly_chart(grafico_cpf_por_convenio(hubspot_data))
+
+# Função principal
 def main():
     st.title('Análise de Dados de HubSpot e Disparos')
-
-    # Upload de arquivos
     uploaded_files = st.file_uploader("Carregar arquivos", accept_multiple_files=True)
+
+    st.sidebar.header("Filtros")
+    
     if len(uploaded_files) == 2:
-        hubspot_file = uploaded_files[0]
-        disparos_file = uploaded_files[1]
+        # Verifica a ordem dos arquivos e carrega-os
+        hubspot_file = [file for file in uploaded_files if 'hubspot' in file.name.lower()]
+        disparos_file = [file for file in uploaded_files if 'disparos' in file.name.lower()]
 
-        # Leitura dos arquivos CSV
-        hubspot_data = pd.read_csv(hubspot_file)
-        disparos_data = pd.read_csv(disparos_file)
+        if hubspot_file and disparos_file:
+            hubspot_data, disparos_data = carregar_dados(hubspot_file[0], disparos_file[0])
+            
+            # Obtém a data mínima e máxima de disparos
+            min_date_disparo = disparos_data['data_criado'].min()
+            max_date_disparo = disparos_data['data_criado'].max()
 
-        # Tratamento e normalização dos dados
-        hubspot_data.columns = ['id', 'cliente', 'data_criado', 'cpf', 'telefone', 'convenio_completo',
-                                'origem', 'campanha', 'proprietario', 'produto', 'equipe', 'etapa',
-                                'motivo_perda', 'data_pago', 'comissao_total_projetada', 'valor_pago']
+            # Filtro de data
+            data_inicio = st.sidebar.date_input("Data Início", min_value=min_date_disparo, max_value=max_date_disparo, value=min_date_disparo)
+            data_fim = st.sidebar.date_input("Data Fim", min_value=data_inicio, max_value=max_date_disparo, value=max_date_disparo)
 
-        hubspot_data = hubspot_data.loc[~hubspot_data['origem'].isin(['HYPERFLOW', 'Tallos', 'DISPARO'])]
-        hubspot_data['data_criado'] = pd.to_datetime(hubspot_data['data_criado']).dt.date
-        hubspot_data['convenio'] = hubspot_data['campanha'].str.split("_").str[0].str.upper()
+            st.write(data_inicio,data_fim)
 
-        disparos_data['Convênio'] = disparos_data['Convênio'].str.replace(" ","")
-        disparos_data['Data'] = pd.to_datetime(disparos_data['Data'], dayfirst=True).dt.date
+            hubspot_data = hubspot_data.loc[(hubspot_data['data_criado'] >= pd.Timestamp(data_inicio)) & (hubspot_data['data_criado'] <= pd.Timestamp(data_fim))]
+            disparos_data = disparos_data.loc[(disparos_data['data_criado'] >= pd.Timestamp(data_inicio)) & (disparos_data['data_criado'] <= pd.Timestamp(data_fim))]
 
-        hubspot_data['data_criado'] = pd.to_datetime(hubspot_data['data_criado'])  # Garante que a coluna é datetime64
-        hubspot_data = hubspot_data.loc[hubspot_data['data_criado'] > pd.Timestamp("2025-02-10")]
-        hubspot_data['origem'] = hubspot_data['origem'].replace("Whatsapp Grow", "RCS")
-
-        # Normalizando o produto
-        hubspot_data["produto2"] = hubspot_data["produto"].apply(normalizar_produto)
-        
-        disparos_data.columns = ['data_criado', 'convenio', 'produto2', 'quantidade', 'origem', 'gasto', 'mql', 'pagos', 'receita']
-        disparos_data['data_criado'] = pd.to_datetime(disparos_data['data_criado'])  # Converte para datetime64
-        disparos_data = disparos_data.loc[disparos_data['data_criado'] > pd.Timestamp("2025-02-10")]
-
-        # Gráfico 1
-        dados_agrupados = hubspot_data.groupby(["data_criado", "origem"])['cpf'].size().reset_index(name='Quantidade')
-        fig1 = px.bar(dados_agrupados, x="data_criado", y="Quantidade", color="origem", title="Quantidade de Registros por Data de Criação e Origem", text="Quantidade", labels={"criado": "Data de Criação", "Quantidade": "Quantidade de Registros", "origem": "Origem"}, barmode="group")
-        fig1.update_layout(xaxis_title="Data de Criação", yaxis_title="Quantidade de Registros", legend_title="Origem", width=1400, height=700, template="plotly_dark", margin=dict(l=40, r=40, t=60, b=40))
-        st.plotly_chart(fig1)
-
-        # Gráfico 2
-        data = hubspot_data.groupby(['data_criado', 'convenio', 'produto2', 'origem'])['id'].size().reset_index(name='leads')
-        merged_data = data.merge(disparos_data, on=['data_criado', 'convenio', 'produto2', 'origem'], how='inner')
-        df_grouped = merged_data.groupby(['convenio', 'produto2'])[['quantidade', 'leads']].sum().reset_index()
-        df_grouped['proporcao %'] = ((df_grouped['leads'] / df_grouped['quantidade']) * 100).round(2)
-        df_grouped = df_grouped.sort_values(by='proporcao %', ascending=False)
-        fig2 = go.Figure(data=[go.Table(header=dict(values=["<b>Convênio</b>", "<b>Produto</b>", "<b>Quantidade Disparada</b>", "<b>Leads Gerados</b>", "<b>Proporção %</b>"], fill_color='lightblue', align='center', font=dict(size=14, color='black'), height=40), cells=dict(values=[df_grouped['convenio'], df_grouped['produto2'], df_grouped['quantidade'], df_grouped['leads'], df_grouped['proporcao %'].round(2)], fill_color=[['white', '#f2f2f2'] * (len(df_grouped) // 2)], align='center', font=dict(size=18, color='black'), height=30))])
-        fig2.update_layout(title="<b>Tabela de Disparos e Leads por Convênio e Produto</b>", height=1000)
-        st.plotly_chart(fig2)
-
-        # Gráfico 3
-        hubspot_data_semperda = hubspot_data.loc[hubspot_data['etapa'] != 'PERDA']
-        grouped_data = hubspot_data_semperda.groupby(['etapa', 'origem'])['cpf'].size().reset_index(name='Quantidade')
-        fig3 = px.bar(grouped_data, x='etapa', y='Quantidade', color='origem', barmode='group', title='Distribuição de CPF por Etapa e Origem', labels={'etapa': 'Etapa', 'Quantidade': 'Quantidade de CPFs', 'origem': 'Origem'})
-        fig3.update_layout(xaxis=dict(title='Etapa', tickangle=45), yaxis=dict(title='Quantidade de CPFs'), barmode='group', template='plotly_dark', height=800)
-        st.plotly_chart(fig3)
-
-        # Gráfico 4
-        hubspot_data_perda = hubspot_data.loc[hubspot_data['etapa'] != 'PERDA']
-        grouped_data = hubspot_data_perda.groupby(['etapa', 'origem'])['cpf'].size().reset_index(name='Quantidade')
-        fig4 = px.bar(grouped_data, x='etapa', y='Quantidade', color='origem', barmode='group', title='Distribuição de CPF por Etapa e Origem', labels={'etapa': 'Etapa', 'Quantidade': 'Quantidade de CPFs', 'origem': 'Origem'})
-        fig4.update_layout(xaxis=dict(title='Etapa', tickangle=45, tickfont=dict(size=14)), yaxis=dict(title='Quantidade de CPFs'), barmode='group', template='plotly_dark', height=800)
-        st.plotly_chart(fig4)
-
-        # Gráfico 5
-        grouped_data = hubspot_data.groupby(['convenio', 'origem'])['cpf'].size().reset_index(name='Quantidade')
-        fig5 = px.bar(grouped_data, y='convenio', x='Quantidade', color='origem', orientation='h', title='Quantidade de CPFs por Convênio e Origem', labels={'convenio': 'Convênio', 'Quantidade': 'Quantidade de CPFs', 'origem': 'Origem'})
-        fig5.update_layout(yaxis=dict(title='Convênio', tickfont=dict(size=18), automargin=True), xaxis=dict(title='Quantidade de CPFs', tickfont=dict(size=12)), template='plotly_dark', height=1200)
-        st.plotly_chart(fig5)
+            exibir_graficos(hubspot_data, disparos_data)
 
 if __name__ == "__main__":
     main()
