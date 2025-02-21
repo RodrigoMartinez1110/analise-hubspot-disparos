@@ -23,13 +23,11 @@ def grafico_quantidade_registros_por_origem(hubspot_data):
             tickangle=30,  # Inclina os rótulos do eixo X para melhorar a legibilidade
             tickmode='linear',  # Define a exibição de ticks de forma linear
             tickfont=dict(size=18),  # Ajusta o tamanho da fonte dos rótulos do eixo X
-            titlefont=dict(size=16),  # Ajusta o tamanho da fonte do título do eixo X
             zeroline=False,  # Remove a linha zero do eixo X
         ),
         yaxis=dict(
             showgrid=True,  # Mantém as grades no eixo Y para facilitar a leitura
             tickfont=dict(size=16),  # Ajusta o tamanho da fonte dos rótulos do eixo Y
-            titlefont=dict(size=16),  # Ajusta o tamanho da fonte do título do eixo Y
             zeroline=True,  # Exibe a linha zero do eixo Y
         ),
         margin=dict(l=0, r=0, t=40, b=40),  # Ajusta as margens para dar mais espaço
@@ -97,20 +95,18 @@ def grafico_tabela(hubspot_data, disparos_data):
 
     fig.update_layout(
         title="Proporção de Leads por Convênio e Produto",  # Título personalizado
-        xaxis_title="Data de Criação",  # Título do eixo X
-        yaxis_title="Quantidade de leads",
+        xaxis_title="Convênio",  # Título do eixo X
+        yaxis_title="Proporção de Leads (%)",
         xaxis=dict(
             showgrid=False,  # Remove as grades do eixo X
             tickangle=55,  # Inclina os rótulos do eixo X para melhorar a legibilidade
             tickmode='linear',  # Define a exibição de ticks de forma linear
             tickfont=dict(size=18),  # Ajusta o tamanho da fonte dos rótulos do eixo X
-            titlefont=dict(size=16),  # Ajusta o tamanho da fonte do título do eixo X
             zeroline=False,  # Remove a linha zero do eixo X
         ),
         yaxis=dict(
             showgrid=True,  # Mantém as grades no eixo Y para facilitar a leitura
             tickfont=dict(size=16),  # Ajusta o tamanho da fonte dos rótulos do eixo Y
-            titlefont=dict(size=16),  # Ajusta o tamanho da fonte do título do eixo Y
             zeroline=True,  # Exibe a linha zero do eixo Y
         ),
         margin=dict(l=40, r=20, t=40, b=40),  # Ajusta as margens para dar mais espaço
@@ -134,20 +130,18 @@ def grafico_etapas_origem(hubspot_data):
     
     fig.update_layout(
         title="Quantidade de leads por Etapa",  # Título personalizado
-        xaxis_title="Data de Criação",  # Título do eixo X
+        xaxis_title="Etapa",  # Título do eixo X
         yaxis_title="Quantidade de leads",
         xaxis=dict(
             showgrid=False,  # Remove as grades do eixo X
             tickangle=0,  # Inclina os rótulos do eixo X para melhorar a legibilidade
             tickmode='linear',  # Define a exibição de ticks de forma linear
             tickfont=dict(size=18),  # Ajusta o tamanho da fonte dos rótulos do eixo X
-            titlefont=dict(size=16),  # Ajusta o tamanho da fonte do título do eixo X
             zeroline=False,  # Remove a linha zero do eixo X
         ),
         yaxis=dict(
             showgrid=True,  # Mantém as grades no eixo Y para facilitar a leitura
             tickfont=dict(size=16),  # Ajusta o tamanho da fonte dos rótulos do eixo Y
-            titlefont=dict(size=16),  # Ajusta o tamanho da fonte do título do eixo Y
             zeroline=True,  # Exibe a linha zero do eixo Y
         ),
         margin=dict(l=40, r=20, t=40, b=40),  # Ajusta as margens para dar mais espaço
@@ -156,7 +150,6 @@ def grafico_etapas_origem(hubspot_data):
         template='plotly_dark',
     )
     return fig
-
 
 
 # Grafico 4 - Mostra quantos leads foram gerados pra cada convênio por cada origem
@@ -168,11 +161,4 @@ def grafico_cpf_por_convenio(hubspot_data):
         labels={'convenio': 'Convênio', 'Quantidade': 'Quantidade de Leads', 'origem': 'Origem'}
     )
     
-    fig.update_layout(
-        yaxis=dict(title='Convênio', tickfont=dict(size=18), automargin=True),
-        xaxis=dict(title='Quantidade de Leads', tickfont=dict(size=12)),
-        template='plotly_dark',
-        height=900,
-        width=1600
-    )
     return fig
