@@ -160,5 +160,10 @@ def grafico_cpf_por_convenio(hubspot_data):
         orientation='h', title='Quantidade de Leads por Convênio e Origem',
         labels={'convenio': 'Convênio', 'Quantidade': 'Quantidade de Leads', 'origem': 'Origem'}
     )
+
+    fig.update_layout(
+        title='Quantidade de Leads por Convênio pra cada Origem',
+        height=1400
+    )
     
     return fig
