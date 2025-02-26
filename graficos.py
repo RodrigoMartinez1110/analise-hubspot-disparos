@@ -2,6 +2,24 @@ import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
 
+cor_map = {
+    "RCS": "#9E1E8E",      # Rojo vibrante (tom próximo ao roxo da Plasma)
+    "SMS": "#F43D56",      # Rosa mais quente e intenso
+    "URA": "#F1A01C",      # Laranja intenso, próximo ao Plasma
+    "App": "#FDE300",      # Amarelo brilhante da parte final da paleta
+    "Resgate": "#F24E1E",   # Laranja mais suave, mas ainda bem quente
+    "E-mail": "#C11E6D"     # Um tom de rosa próximo ao Plasma
+}
+
+
+produto_map = {
+    'BENEFICIO': "",
+    'NOVO': "",
+    "AMBOS CARTÕES": ""
+}
+
+
+
 
 # Grafico 1 - Mostra quantos leads foram gerados por dia para cada origem
 def grafico_quantidade_registros_por_origem(hubspot_data):
@@ -11,7 +29,8 @@ def grafico_quantidade_registros_por_origem(hubspot_data):
         title="Quantidade de Registros por Data de Criação e Origem",
         text="Quantidade",
         labels={"criado": "Data de Criação", "Quantidade": "Quantidade de Registros", "origem": "Origem"},
-        barmode="group"
+        barmode="group",
+        color_discrete_map=cor_map
     )
     
     fig.update_layout(
@@ -37,8 +56,6 @@ def grafico_quantidade_registros_por_origem(hubspot_data):
     )
 
     return fig
-
-
 
 # Grafico 2 - Tabela que mostra quantos disparos foram feitos pra cada convenio/produto, quantos leads gerou e proporção
 def grafico_tabela_disparos_leads(hubspot_data, disparos_data):
@@ -116,7 +133,6 @@ def grafico_tabela(hubspot_data, disparos_data):
     )
     return fig
 
-
 # Grafico 3 - Mostra pra cada etapa do hubspot quantos leads estão nessa etapa (segmentado pela origem)
 def grafico_etapas_origem(hubspot_data):
     grouped_data = hubspot_data.groupby(['etapa', 'origem'])['cpf'].size().reset_index(name='Quantidade')
@@ -125,7 +141,8 @@ def grafico_etapas_origem(hubspot_data):
         grouped_data, x='etapa', y='Quantidade', color='origem',
         barmode='group', title='Distribuição de CPF por Etapa e Origem',
         labels={'etapa': 'Etapa', 'Quantidade': 'Quantidade de CPFs', 'origem': 'Origem'},
-        category_orders={'etapa': ['LEAD', 'NEGOCIAÇÃO', 'CONTRATAÇÃO', 'PAGO', 'PERDA']}  # Define a ordem das etapas
+        category_orders={'etapa': ['LEAD', 'NEGOCIAÇÃO', 'CONTRATAÇÃO', 'PAGO', 'PERDA']},  # Define a ordem das etapas
+        color_discrete_map=cor_map
     )
     
     fig.update_layout(
@@ -158,12 +175,14 @@ def grafico_cpf_por_convenio(hubspot_data):
     fig = px.bar(
         grouped_data, y='convenio', x='Quantidade', color='origem',
         orientation='h', title='Quantidade de Leads por Convênio e Origem',
-        labels={'convenio': 'Convênio', 'Quantidade': 'Quantidade de Leads', 'origem': 'Origem'}
+        labels={'convenio': 'Convênio', 'Quantidade': 'Quantidade de Leads', 'origem': 'Origem'},
+        color_discrete_map=cor_map
     )
 
     fig.update_layout(
         title='Quantidade de Leads por Convênio pra cada Origem',
-        height=1400
+        height=850,
+        width=900
     )
     
     return fig
